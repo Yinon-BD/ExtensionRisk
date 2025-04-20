@@ -120,6 +120,7 @@ The following fields are extracted and analyzed:
 1. Clone the repository
 2. Install server dependencies:
    ```bash
+   cd extension-scraper
    npm install express puppeteer cors
    ```
 3. Start the backend server:
