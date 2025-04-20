@@ -1,3 +1,25 @@
+document.addEventListener("DOMContentLoaded", () => {
+  // ✅ Warn if API key is missing
+  chrome.storage.sync.get(["openaiApiKey"], (result) => {
+    if (!result.openaiApiKey) {
+      const warning = document.createElement("p");
+      warning.textContent = "⚠️ Warning: No OpenAI API key found. Go to settings to enter one.";
+      warning.style.color = "red";
+      document.body.prepend(warning);
+    }
+  });
+
+  // ✅ Settings button behavior
+  const settingsBtn = document.getElementById("openSettingsBtn");
+  if (settingsBtn) {
+    settingsBtn.addEventListener("click", () => {
+      chrome.runtime.openOptionsPage();
+    });
+  }
+
+  // 🧠 Add other logic or event listeners here (e.g., form submission, scan button)
+});
+
 document.getElementById("generateLink").onclick = async () => {
   const extId = document.getElementById("extIdInput").value.trim();
   if (extId.length !== 32) {
@@ -110,7 +132,34 @@ document.getElementById("extractManifest").onclick = async () => {
       `⭐ Rating: ${combinedMetadata.rating ?? "N/A"}\n` +
       `👥 Users: ${combinedMetadata.users?.toLocaleString() ?? "N/A"}\n` +
       `🔐 Permissions: ${permissionList}`;
+
+    // Step 6: Send the metadata to the background script
+    chrome.runtime.sendMessage({
+      action: "assessThreat",
+      metadata: {
+        name: combinedMetadata.name,
+        permissions: permissionList,
+        rating: combinedMetadata.rating,
+        users: combinedMetadata.users
+      }
+    }, (response) => {
+      console.log("Risk assessment:", response);
+      // If response is a string (fallback or error message), show as-is
+      if (typeof response === "string") {
+        document.getElementById("result").textContent += `\n\n${response}`;
+        return;
+      }
+
+      // If it's an object from OpenAI with structured info
+      document.getElementById("result").textContent +=
+        `\n\n🔎 Risk Assessment:\n` +
+        `🛡️ Risk Level: ${response.risk_level}\n` +
+        `📊 Threat Score: ${response.threat_score}\n` +
+        `💬 ${response.explanation}`;
+      });
     });
+
+    
   };
 
   reader.readAsArrayBuffer(file);

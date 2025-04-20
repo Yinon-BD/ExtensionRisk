@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Extension Settings</title>
+    <style>
+      body { font-family: sans-serif; padding: 20px; }
+      label { display: block; margin-bottom: 8px; }
+      input { width: 100%; padding: 8px; margin-bottom: 12px; }
+      button { padding: 10px 20px; }
+    </style>
+  </head>
+  <body>
+    <h2>OpenAI API Key</h2>
+    <label for="apiKey">Enter your OpenAI API Key:</label>
+    <input type="password" id="apiKey" placeholder="sk-..." />
+    <button id="saveBtn">Save Key</button>
+    <button id="deleteBtn" style="margin-left: 10px;">Delete Key</button>
+    <p id="status"></p>
+
+    <script src="options.js"></script>
+  </body>
+</html>
