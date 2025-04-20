@@ -3,12 +3,13 @@
   "name": "Extension Risk Assessment",
   "short_name": "Ext. Risk Assess.",
   "author": "Yinon Ben David",
-  "version": "1.0",
+  "version": "1.0.1",
   "description": "Provide risk assessments for Chrome extensions.",
   "options_page": "options.html",
-  "permissions": ["tabs", "storage", "activeTab", "scripting"],
+  "permissions": ["tabs", "storage", "activeTab", "scripting", "downloads"],
   "host_permissions": [
-    "https://api.openai.com/*"
+    "https://api.openai.com/*",
+    "*://clients2.google.com/service/update2/crx*"
   ],
   "background": {
     "service_worker": "background.js"

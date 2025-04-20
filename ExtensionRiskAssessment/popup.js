@@ -20,6 +20,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🧠 Add other logic or event listeners here (e.g., form submission, scan button)
 });
 
+document.getElementById('downloadCRX').onclick = async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const match = tab.url.match(/\/([a-z]{32})(?=[\/#?]|$)/);
+  if (match && match[1]) {
+    chrome.runtime.sendMessage({ action: "download-crx", extensionId: match[1] });
+  } else {
+    alert("⚠️ Could not extract extension ID from the URL.");
+  }
+};
+
 document.getElementById("generateLink").onclick = async () => {
   const extId = document.getElementById("extIdInput").value.trim();
   if (extId.length !== 32) {
@@ -28,7 +38,20 @@ document.getElementById("generateLink").onclick = async () => {
   }
 
   const link = `https://chrome.google.com/webstore/detail/${extId}`;
-  document.getElementById("linkArea").innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+
+  // Pre-store a 'loading' placeholder to avoid losing everything on popup close
+  chrome.storage.local.set({
+    partialMetadata: {
+      extensionId: extId,
+      status: "loading"
+    }
+  });
+
+  // Set the link visually — but DON'T make it a clickable anchor yet
+  const linkArea = document.getElementById("linkArea");
+  linkArea.innerHTML = "Loading store page...";
+  linkArea.style.pointerEvents = "none"; // disable click temporarily
+  linkArea.style.color = "gray";
 
   try {
     const metadata = await fetchExtensionInfo(extId);
@@ -37,11 +60,24 @@ document.getElementById("generateLink").onclick = async () => {
       `⭐ Rating: ${metadata.rating ?? "N/A"}\n` +
       `👥 Users: ${metadata.users?.toLocaleString() ?? "N/A"}`;
 
-    // Store it for later use (e.g., OpenAI API)
+    // ✅ Save full metadata
     chrome.storage.local.set({ partialMetadata: metadata });
+
+    // After saving — update the link and restore click behavior
+    setTimeout(() => {
+      linkArea.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+      linkArea.style.pointerEvents = "auto";
+      linkArea.style.color = "inherit";
+
+      // Optionally auto-open in new tab
+      // window.open(link, "_blank");
+    }, 250); // Give time for storage to complete
 
   } catch (err) {
     document.getElementById("result").textContent = "❌ Failed to fetch extension info.";
+    linkArea.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+    linkArea.style.pointerEvents = "auto";
+    linkArea.style.color = "inherit";
   }
 };
 

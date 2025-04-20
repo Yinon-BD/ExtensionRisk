@@ -45,6 +45,41 @@ Output Format:
 Be cautious but fair: powerful permissions alone are not enough to judge an extension as dangerous if it has a large and satisfied user base.
           `.trim()
 
+function getChromeVersion() {
+  const pieces = navigator.userAgent.match(/Chrom(?:e|ium)\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/);
+  if (!pieces || pieces.length !== 5) return "112.0.0.0"; // fallback
+  return `${pieces[1]}.${pieces[2]}.${pieces[3]}.${pieces[4]}`;
+}
+
+function getNaclArch() {
+  if (navigator.userAgent.includes("x64")) return "x86-64";
+  if (navigator.userAgent.includes("x86")) return "x86-32";
+  return "arm";
+}
+
+function downloadCRX(extensionId) {
+  const version = getChromeVersion();
+  const nacl_arch = getNaclArch();
+  const crxUrl = `https://clients2.google.com/service/update2/crx?response=redirect&prodversion=${version}&acceptformat=crx2,crx3&x=id%3D${extensionId}%26uc&nacl_arch=${nacl_arch}`;
+
+  chrome.downloads.download({
+    url: crxUrl,
+    filename: `${extensionId}.crx`,
+    saveAs: true
+  }, () => {
+    if (chrome.runtime.lastError) {
+      alert("❌ Download failed: " + chrome.runtime.lastError.message);
+    }
+  });
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "download-crx" && request.extensionId) {
+    downloadCRX(request.extensionId);
+  }
+});
+
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "assessThreat") {
     assessExtensionRisk(message.metadata).then(result => {

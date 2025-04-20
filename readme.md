@@ -3,7 +3,7 @@
 ## 📘 Overview
 
 This project is a Chrome extension that analyzes other Chrome extensions for potential security risks.  
-Users can input the ID of a Chrome extension, after which an external tool downloads the `.crx` file. This tool extracts metadata, and uses the OpenAI API to provide a threat score and risk analysis.
+Users can input the ID of a Chrome extension, download the `.crx` file directly, extract metadata, and use the OpenAI API to provide a threat score and risk analysis.
 
 ---
 
@@ -11,6 +11,7 @@ Users can input the ID of a Chrome extension, after which an external tool downl
 
 - Input Chrome Extension ID
 - Create a direct link to the Chrome Web Store page of the extension
+- Download the `.crx` file directly from the popup interface
 - Extract and parse `manifest.json` and additional metadata:
   - `name`, `version`, `description`, `permissions`, `rating`, and number of users
 - Use OpenAI API for:
@@ -25,7 +26,7 @@ Users can input the ID of a Chrome extension, after which an external tool downl
 ### Frontend
 - Popup interface to:
   - Enter extension ID
-  - Upload CRX files
+  - Downlaod & Upload `.crx` files
   - Display metadata and results
   - Assign an OpenAI API key
 
@@ -66,9 +67,8 @@ The following fields are extracted and analyzed:
 - Sent to OpenAI’s GPT-4o-mini model
 - Model evaluates:
   - Suspicious permissions (e.g., `<all_urls>`, `webRequest`, `tabs`)
-  - Dangerous host access
-  - Vague or misleading descriptions
-  - Excessive or unjustified requested capabilities
+  - Global user trust by number of downloads
+  - Credibility by rating on the Chrome Extension Store Page.
 
 ### Prompt Template
 > "Given the following metadata from a Chrome extension, provide a **risk score from 0 to 10**, and explain the reasoning. Focus on any suspicious permissions, overly broad host access, or other red flags."
@@ -85,13 +85,11 @@ The following fields are extracted and analyzed:
 - Risk score depends on metadata alone — actual source code is not analyzed
 - User cannot use the extension without his own OpenAI API key
 - Quality and consistency of assessment depends on metadata availability
-- Real-time behavioral monitoring is not included
 
 ---
 
 ## 🚀 Future Improvements
 
-- Integrate CRX download and extraction directly in the extension
 - Add model fine-tuning for more accurate scoring
 - Enhance UX and get results with one click
 
@@ -103,14 +101,13 @@ The following fields are extracted and analyzed:
 - **Node.js + Express** (backend server)
 - **Puppeteer** (extension metadata scraper)
 - **OpenAI API** (threat evaluation using GPT-4)
-- **CRX Extractor/Downloader** (manual CRX downloads)
 
 ---
 
 ## 👥 Authors & Acknowledgements
 
 - Developed by: Yinon Ben David
-- CRX extraction thanks to: [CRX Extractor/Downloader](https://github.com/tonystark93/crx-download)
+- CRX download thanks to: [CRX Extractor/Downloader](https://github.com/tonystark93/crx-download)
 - Risk scoring powered by OpenAI
 
 ---
