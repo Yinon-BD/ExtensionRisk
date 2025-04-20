@@ -1,24 +1,162 @@
-document.getElementById("analyzeBtn").addEventListener("click", async () => {
-    const extIdOrName = document.getElementById("extInput").value.trim();
-    const resultsDiv = document.getElementById("results");
-  
-    if (!extIdOrName) {
-      resultsDiv.innerText = "Please enter a valid extension ID or name.";
+document.getElementById("generateLink").onclick = async () => {
+  const extId = document.getElementById("extIdInput").value.trim();
+  if (extId.length !== 32) {
+    alert("Invalid Extension ID");
+    return;
+  }
+
+  const link = `https://chrome.google.com/webstore/detail/${extId}`;
+  document.getElementById("linkArea").innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+
+  try {
+    const metadata = await fetchExtensionInfo(extId);
+
+    document.getElementById("result").textContent =
+      `⭐ Rating: ${metadata.rating ?? "N/A"}\n` +
+      `👥 Users: ${metadata.users?.toLocaleString() ?? "N/A"}`;
+
+    // Store it for later use (e.g., OpenAI API)
+    chrome.storage.local.set({ partialMetadata: metadata });
+
+  } catch (err) {
+    document.getElementById("result").textContent = "❌ Failed to fetch extension info.";
+  }
+};
+
+document.getElementById("extractManifest").onclick = async () => {
+  const file = document.getElementById("crxUpload").files[0];
+  if (!file) return alert("Please upload a CRX file first.");
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const buf = new Uint8Array(reader.result);
+
+    // Step 1: Extract ZIP portion from CRX
+    let zipStartOffset;
+    if (buf[4] === 2) {
+      zipStartOffset = 16 +
+        (buf[8] | buf[9] << 8 | buf[10] << 16 | buf[11] << 24) +
+        (buf[12] | buf[13] << 8 | buf[14] << 16 | buf[15] << 24);
+    } else {
+      zipStartOffset = 12 + (buf[8] | buf[9] << 8 | buf[10] << 16 | buf[11] << 24);
+    }
+
+    const zipData = buf.slice(zipStartOffset);
+    const zip = await JSZip.loadAsync(zipData);
+
+    // Step 2: Extract manifest.json
+    const manifestFile = zip.file("manifest.json");
+    if (!manifestFile) {
+      alert("❌ manifest.json not found in the CRX file.");
       return;
     }
-  
-    resultsDiv.innerText = "🔍 Fetching extension metadata...";
-  
-    // Call background to fetch and analyze
-    chrome.runtime.sendMessage({ type: "analyze-extension", input: extIdOrName }, (response) => {
-      if (response && response.riskScore !== undefined) {
-        resultsDiv.innerHTML = `
-          <b>Risk Score:</b> ${response.riskScore}/100<br/>
-          <b>Reasoning:</b><br/>${response.explanation.replace(/\n/g, "<br/>")}
-        `;
-      } else {
-        resultsDiv.innerHTML = `<span style="color:red;">Error analyzing extension.</span>`;
+    const manifestText = await manifestFile.async("string");
+    const manifest = JSON.parse(manifestText);
+
+    // Step 3: Extract localization messages if needed
+    let messages = {};
+    const allLocales = Object.keys(zip.files).filter(name =>
+      name.startsWith("_locales/") && name.endsWith("messages.json")
+    );
+
+    // Try to use English first
+    const preferredLocale = allLocales.find(name => name.includes("_locales/en/")) || allLocales[0];
+
+    if (preferredLocale) {
+      try {
+        const messagesText = await zip.file(preferredLocale).async("string");
+        messages = JSON.parse(messagesText);
+      } catch (err) {
+        console.warn("Could not parse messages.json", err);
       }
+    }
+
+
+    // Step 4: Resolve localized __MSG_...__ fields
+    function resolveLocalizedField(field) {
+      const match = field.match(/^__MSG_(.*?)__$/);
+      if (match) {
+        const key = match[1];
+        return messages?.[key]?.message || field;
+      }
+      return field;
+    }
+
+    manifest.name = resolveLocalizedField(manifest.name);
+    manifest.description = resolveLocalizedField(manifest.description);
+    const allPermissions = [
+      ...(manifest.permissions || []),
+      ...(manifest.host_permissions || [])
+    ];
+    
+
+    // Step 5: Get stored stats and merge
+    chrome.storage.local.get("partialMetadata", (result) => {
+      const stats = result.partialMetadata || {};
+      const combinedMetadata = { ...manifest, ...stats };
+      combinedMetadata.all_permissions = allPermissions;
+
+      chrome.storage.local.set({ extensionMetadata: combinedMetadata });
+
+      const permissionList = allPermissions.length > 0
+      ? allPermissions.join(", ")
+      : "None";
+
+    document.getElementById("result").textContent =
+      `✅ Metadata ready:\n\n` +
+      `🧩 Name: ${combinedMetadata.name}\n` +
+      `📦 Version: ${combinedMetadata.version}\n` +
+      `📝 Description: ${combinedMetadata.description?.slice(0, 200)}...\n` +
+      `⭐ Rating: ${combinedMetadata.rating ?? "N/A"}\n` +
+      `👥 Users: ${combinedMetadata.users?.toLocaleString() ?? "N/A"}\n` +
+      `🔐 Permissions: ${permissionList}`;
     });
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+async function fetchStats(extensionId) {
+  const response = await fetch("http://localhost:3000/stats", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ extensionId })
   });
-  
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch extension stats");
+  }
+
+  return await response.json();
+}
+
+async function fetchExtensionInfo(extId) {
+  const url = `http://localhost:3000/extension/${extId}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch extension info");
+    }
+
+    const metadata = await response.json();
+    return metadata;
+  } catch (err) {
+    console.error("Error fetching extension info:", err);
+    throw err;
+  }
+}
+
+function resolveLocalizedField(field, messages) {
+  const match = field.match(/^__MSG_(.*?)__$/);
+  if (match) {
+    const key = match[1];
+    return messages?.[key]?.message || field;
+  }
+  return field;
+}
+
+
+

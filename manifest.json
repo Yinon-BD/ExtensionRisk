@@ -1,20 +1,29 @@
 {
     "manifest_version": 3,
-    "name": "Extension Risk Assessor",
+    "name": "Extension Risk Assessment",
+    "short_name": "Ex. Risk Assess.",
+    "author": "Yinon Ben David",
     "version": "1.0",
-    "description": "Analyze the security risk of Chrome extensions using OpenAI.",
-    "permissions": ["storage", "activeTab", "scripting"],
-    "host_permissions": ["https://*/*", "http://*/*"],
+    "description": "Provide risk assessments for Chrome extensions.",
+    "permissions": ["tabs", "storage", "activeTab", "scripting"],
+    "host_permissions": [
+        "https://api.crxplore.dev/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
     "action": {
       "default_popup": "popup.html",
       "default_icon": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
       }
     },
-    "background": {
-      "service_worker": "background.js"
+    "icons": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
     }
-  }
+}
   
