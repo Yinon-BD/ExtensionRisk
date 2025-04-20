@@ -3,17 +3,16 @@
 ## 📘 Overview
 
 This project is a Chrome extension that analyzes other Chrome extensions for potential security risks.  
-Users can input the ID of a Chrome extension, download the `.crx` file directly, extract metadata, and use the OpenAI API to provide a threat score and risk analysis.
+Users can input the ID of a Chrome extension, after which the extension automatically downloads the `.crx` file, extracts metadata, and uses the OpenAI API to provide a threat score and risk analysis.
 
 ---
 
 ## ✨ Features
 
 - Input Chrome Extension ID
-- Create a direct link to the Chrome Web Store page of the extension
 - Download the `.crx` file directly from the popup interface
 - Extract and parse `manifest.json` and additional metadata:
-  - `name`, `version`, `description`, `permissions`, `rating`, and number of users
+  - `name`, `version`, `description`, `permissions`, `rating`, and `number of users`
 - Use OpenAI API for:
   - Risk score generation
   - Natural language explanation of risks
@@ -41,10 +40,6 @@ Users can input the ID of a Chrome extension, download the `.crx` file directly,
   - Rating
   - User count
 
-### CRX Downloader
-- An open-source Chrome extension: [CRX Extractor/Downloader](https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda)
-- Currently used manually by the user to download `.crx` files
-- Future plans include integrating CRX download functionality directly into this project
 
 ---
 
@@ -83,7 +78,7 @@ The following fields are extracted and analyzed:
 ## ⚠️ Limitations
 
 - Risk score depends on metadata alone — actual source code is not analyzed
-- User cannot use the extension without his own OpenAI API key
+- User must provide a personal OpenAI API key
 - Quality and consistency of assessment depends on metadata availability
 
 ---
@@ -114,7 +109,10 @@ The following fields are extracted and analyzed:
 
 ## 📦 Installation Instructions
 
-1. Clone the repository
+1. Clone the repository:
+  ```bash
+  git clone https://github.com/Yinon-BD/ExtensionRisk.git
+  ```
 2. Install server dependencies:
    ```bash
    cd extension-scraper
@@ -130,8 +128,6 @@ The following fields are extracted and analyzed:
     - Click "Load unpacked"
     - Select the `ExtensionRiskAssessment` directory
 5. Add your OpenAI API key in settings
-6. Input a Chrome Extension ID
-7. Click on the given link to go to the extension's web page
-8. Open CRX Extractor/Downloader extension and click `Download as CRX`
-9. Open ExtensionRiskAssessment extension and upload the `.crx` file
-10. View metadata and security risk analysis
+6. Input a Chrome Extension ID - the `.crx` file will immediately start to download and metadata will be collected
+7. Open ExtensionRiskAssessment extension again and upload the `.crx` file
+8. View metadata and security risk analysis

@@ -17,67 +17,44 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🧠 Add other logic or event listeners here (e.g., form submission, scan button)
 });
 
-document.getElementById('downloadCRX').onclick = async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const match = tab.url.match(/\/([a-z]{32})(?=[\/#?]|$)/);
-  if (match && match[1]) {
-    chrome.runtime.sendMessage({ action: "download-crx", extensionId: match[1] });
-  } else {
-    alert("⚠️ Could not extract extension ID from the URL.");
-  }
-};
-
-document.getElementById("generateLink").onclick = async () => {
+document.getElementById("downloadCRX").onclick = async () => {
   const extId = document.getElementById("extIdInput").value.trim();
+  const infoArea = document.getElementById("infoArea");
+
   if (extId.length !== 32) {
-    alert("Invalid Extension ID");
+    alert("❌ Invalid Extension ID");
     return;
   }
 
-  const link = `https://chrome.google.com/webstore/detail/${extId}`;
-
-  // Pre-store a 'loading' placeholder to avoid losing everything on popup close
-  chrome.storage.local.set({
-    partialMetadata: {
-      extensionId: extId,
-      status: "loading"
-    }
-  });
-
-  // Set the link visually — but DON'T make it a clickable anchor yet
-  const linkArea = document.getElementById("linkArea");
-  linkArea.innerHTML = "Loading store page...";
-  linkArea.style.pointerEvents = "none"; // disable click temporarily
-  linkArea.style.color = "gray";
+  // Start visual feedback
+  infoArea.textContent = "⏳ Fetching metadata...";
+  infoArea.style.color = "gray";
 
   try {
     const metadata = await fetchExtensionInfo(extId);
+
+    // Save for later (e.g., manifest merge)
+    chrome.storage.local.set({
+      partialMetadata: { ...metadata, extensionId: extId }
+    });
 
     document.getElementById("result").textContent =
       `⭐ Rating: ${metadata.rating ?? "N/A"}\n` +
       `👥 Users: ${metadata.users?.toLocaleString() ?? "N/A"}`;
 
-    // ✅ Save full metadata
-    chrome.storage.local.set({ partialMetadata: metadata });
+    // If metadata fetch succeeded → now trigger CRX download
+    chrome.runtime.sendMessage({ action: "download-crx", extensionId: extId });
 
-    // After saving — update the link and restore click behavior
-    setTimeout(() => {
-      linkArea.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
-      linkArea.style.pointerEvents = "auto";
-      linkArea.style.color = "inherit";
-
-      // Optionally auto-open in new tab
-      // window.open(link, "_blank");
-    }, 250); // Give time for storage to complete
+    infoArea.textContent = "✅ Metadata fetched | ⬇️ CRX download started";
+    infoArea.style.color = "green";
 
   } catch (err) {
-    document.getElementById("result").textContent = "❌ Failed to fetch extension info.";
-    linkArea.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
-    linkArea.style.pointerEvents = "auto";
-    linkArea.style.color = "inherit";
+    infoArea.textContent = "❌ Failed to fetch metadata. CRX download cancelled.";
+    infoArea.style.color = "red";
+    document.getElementById("result").textContent =
+      `⚠️ Error: ${err.message}`;
   }
 };
 
@@ -201,22 +178,6 @@ document.getElementById("extractManifest").onclick = async () => {
   reader.readAsArrayBuffer(file);
 };
 
-async function fetchStats(extensionId) {
-  const response = await fetch("http://localhost:3000/stats", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ extensionId })
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch extension stats");
-  }
-
-  return await response.json();
-}
-
 async function fetchExtensionInfo(extId) {
   const url = `http://localhost:3000/extension/${extId}`;
 
@@ -233,15 +194,3 @@ async function fetchExtensionInfo(extId) {
     throw err;
   }
 }
-
-function resolveLocalizedField(field, messages) {
-  const match = field.match(/^__MSG_(.*?)__$/);
-  if (match) {
-    const key = match[1];
-    return messages?.[key]?.message || field;
-  }
-  return field;
-}
-
-
-

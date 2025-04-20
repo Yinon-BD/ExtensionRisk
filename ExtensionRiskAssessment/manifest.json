@@ -3,7 +3,7 @@
   "name": "Extension Risk Assessment",
   "short_name": "Ext. Risk Assess.",
   "author": "Yinon Ben David",
-  "version": "1.0.1",
+  "version": "1.1",
   "description": "Provide risk assessments for Chrome extensions.",
   "options_page": "options.html",
   "permissions": ["tabs", "storage", "activeTab", "scripting", "downloads"],

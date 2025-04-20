@@ -25,7 +25,7 @@ app.get("/extension/:id", async (req, res) => {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.198 Safari/537.36"
     );
 
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
 
     const data = await page.evaluate(() => {
       const bodyText = document.body.innerText;

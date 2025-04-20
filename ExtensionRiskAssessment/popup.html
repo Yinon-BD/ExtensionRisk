@@ -32,17 +32,8 @@
   <h3>Check Extension Risk</h3>
 
   <input type="text" id="extIdInput" placeholder="Enter Extension ID">
-  <button id="generateLink">Generate Store Link</button>
-
-  <div id="linkArea"></div>
-
-  <p style="font-size: 12px; margin-bottom: 4px; color: #888;">
-    Make sure you're on the extension's Chrome Web Store page before downloading:
-  </p>
-  <button class="buttons defaultBtn" id="downloadCRX" title="Download extension in CRX">
-    Download as CRX
-  </button>
-  
+  <button id="downloadCRX">Fetch Metadata & Download CRX</button>
+  <div id="infoArea" style="font-size: 13px; color: gray;"></div>  
 
   <input type="file" id="crxUpload" accept=".crx">
   <button id="extractManifest">Extract Metadata</button>
